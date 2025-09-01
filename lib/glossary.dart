@@ -1,0 +1,63 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show rootBundle;
+
+import 'package:diacritic/diacritic.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
+
+import 'package:chappon/data/glossaryData.dart';
+import 'package:chappon/languageSettings.dart';
+import 'package:chappon/styles.dart';
+
+class Glossary extends StatefulWidget {
+  @override
+  _GlossaryState createState() => _GlossaryState();
+}
+
+List<Widget> makeGlossary(BuildContext context) {
+  return (glossaryItems().entries.toList()
+        ..sort((a, b) => removeDiacritics(a.key.toLowerCase())
+            .compareTo(removeDiacritics(b.key.toLowerCase()))))
+      .map((item) {
+    return Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: GestureDetector(
+          onTap: () {
+            Navigator.of(context).push(MaterialPageRoute(
+              builder: (context) => FutureBuilder(
+                  future: rootBundle
+                      .loadString("assets/glossary/${locale}/${item.value}"),
+                  builder: (context, snapshot) {
+                    return Scaffold(
+                      appBar: AppBar(
+                        title: Text(
+                            "${item.key[0].toUpperCase()}${item.key.substring(1)}"),
+                      ),
+                      body: Markdown(
+                          data: snapshot.data ??
+                              'Failed to load glossary asset: ${item.value}'),
+                    );
+                  }),
+            ));
+          },
+          child: Container(
+            constraints: BoxConstraints(minHeight: 50),
+            decoration: BoxDecoration(
+                border: Border.all(
+                  color: Colours.accentColor,
+                ),
+                borderRadius: BorderRadius.all(Radius.circular(5))),
+            child: Center(child: Text(item.key)),
+          ),
+        ));
+  }).toList();
+}
+
+class _GlossaryState extends State<Glossary> {
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.all(8),
+      children: makeGlossary(context),
+    );
+  }
+}
